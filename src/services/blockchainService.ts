@@ -179,7 +179,7 @@ class BlockchainService {
     if (!this.signer || !this.contract) throw new Error("Wallet not connected");
 
     if (type === 'VOTE') {
-      const tx = await this.contract.vote(payload.candidateId, { gasLimit: 500000 });
+      const tx = await this.contract.vote(payload.candidateId);
       const receipt = await tx.wait();
       
       const newTx: Transaction = {
