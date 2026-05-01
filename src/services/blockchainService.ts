@@ -102,7 +102,12 @@ class BlockchainService {
           throw new Error("Failed to switch to Sepolia network");
         }
       }
+      
+      // CRITICAL: Re-instantiate provider after network switch to avoid "underlying network changed" error
+      this.provider = new ethers.BrowserProvider((window as any).ethereum);
     }
+
+    if (!this.provider) throw new Error("No web3 provider found");
 
     const accounts = await this.provider.send("eth_requestAccounts", []);
     this.signer = await this.provider.getSigner();
@@ -152,7 +157,7 @@ class BlockchainService {
   async setVotingStatus(active: boolean) {
     if (!this.signer || !this.contract) throw new Error("Wallet not connected");
     if (active) {
-      const tx = await this.contract.connect(this.signer).startElection();
+      const tx = await this.contract.startElection();
       await tx.wait();
       this.isVotingActive = true;
     }
@@ -160,8 +165,7 @@ class BlockchainService {
 
   async addCandidate(name: string, description: string) {
     if (!this.signer || !this.contract) throw new Error("Wallet not connected");
-    const contractWithSigner = this.contract.connect(this.signer) as any;
-    const tx = await contractWithSigner.addCandidate(name + " - " + description);
+    const tx = await this.contract.addCandidate(name + " - " + description);
     await tx.wait();
     await this.syncState();
   }
@@ -173,10 +177,9 @@ class BlockchainService {
 
   async sendTransaction(type: Transaction['type'], from: string, payload: any): Promise<Transaction> {
     if (!this.signer || !this.contract) throw new Error("Wallet not connected");
-    const contractWithSigner = this.contract.connect(this.signer) as any;
 
     if (type === 'VOTE') {
-      const tx = await contractWithSigner.vote(payload.candidateId);
+      const tx = await this.contract.vote(payload.candidateId);
       const receipt = await tx.wait();
       
       const newTx: Transaction = {
