@@ -21,7 +21,7 @@ export interface Transaction {
 }
 
 class BlockchainService {
-  private contractAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3"; // Default hardhat local address
+  private contractAddress = import.meta.env.VITE_CONTRACT_ADDRESS || "0x5FbDB2315678afecb367f032d93F642f64180aa3";
   private provider: ethers.BrowserProvider | null = null;
   private contract: ethers.Contract | null = null;
   private signer: ethers.Signer | null = null;
