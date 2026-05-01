@@ -71,7 +71,9 @@ export default function VoterPortal({ userDID }: { userDID: string | null }) {
         </div>
         <h2 className="text-2xl font-bold mb-2 text-white">Identity Required</h2>
         <p className="text-zinc-500 max-w-sm mb-8">You must register your Decentralized Identity (DID) before participating in the network.</p>
-        <button className="px-6 py-2 bg-zinc-100 text-black font-bold rounded">Go to Registration</button>
+        <div className="px-4 py-3 bg-zinc-900 border border-zinc-800 rounded-lg text-sm text-zinc-300">
+          <span className="text-emerald-500 font-bold">Action Required:</span> Click the green <strong className="text-white">"REGISTER DID"</strong> or <strong className="text-white">"CONNECT_WALLET"</strong> button in the top right corner of your screen to connect your MetaMask account.
+        </div>
       </div>
     );
   }
