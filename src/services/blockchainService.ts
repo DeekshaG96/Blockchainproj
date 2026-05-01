@@ -21,7 +21,7 @@ export interface Transaction {
 }
 
 class BlockchainService {
-  private contractAddress = import.meta.env.VITE_CONTRACT_ADDRESS || "0x5FbDB2315678afecb367f032d93F642f64180aa3";
+  private contractAddress = import.meta.env.VITE_CONTRACT_ADDRESS || "0x298a182F3A1811EBe17B968EB5D70093B8bc4303";
   private provider: ethers.BrowserProvider | null = null;
   private contract: ethers.Contract | null = null;
   private signer: ethers.Signer | null = null;
