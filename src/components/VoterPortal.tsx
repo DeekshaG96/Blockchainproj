@@ -47,11 +47,16 @@ export default function VoterPortal({ userDID }: { userDID: string | null }) {
       setTxHash(tx.hash);
       setIsVoted(true);
     } catch (err: any) {
-      // Check if it's the "AlreadyVoted" custom error or a generic revert
-      if (err.message && (err.message.includes("AlreadyVoted") || err.message.includes("execution reverted"))) {
+      console.error("VOTE ERROR:", err);
+      // Check for specific error signatures
+      if (err.message && (err.message.includes("AlreadyVoted") || err.message.includes("0x7c9a1cf9"))) {
         setError("You have already voted in this election!");
+      } else if (err.message && err.message.includes("insufficient funds")) {
+        setError("Insufficient Sepolia ETH for gas fees.");
+      } else if (err.message && err.message.includes("user rejected action")) {
+        setError("Transaction was rejected in MetaMask.");
       } else {
-        setError(err.message || "Transaction failed");
+        setError("Failed: " + (err.reason || err.message || "Unknown error"));
       }
     } finally {
       setIsVoting(false);
