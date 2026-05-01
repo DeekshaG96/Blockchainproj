@@ -37,6 +37,12 @@ class BlockchainService {
   async initProvider() {
     if (typeof window !== "undefined" && (window as any).ethereum) {
       this.provider = new ethers.BrowserProvider((window as any).ethereum);
+    } else {
+      console.warn("MetaMask not detected, using fallback read-only provider");
+      this.provider = new ethers.JsonRpcProvider("https://eth-sepolia.g.alchemy.com/v2/demo") as any;
+    }
+    
+    if (this.provider) {
       this.contract = new ethers.Contract(this.contractAddress, VotingArtifact.abi, this.provider);
       
       // Listen to events
@@ -66,8 +72,44 @@ class BlockchainService {
 
   async connectWallet(): Promise<string> {
     if (!this.provider) throw new Error("No web3 provider found");
+    
+    if (typeof window !== "undefined" && (window as any).ethereum) {
+      try {
+        await (window as any).ethereum.request({
+          method: "wallet_switchEthereumChain",
+          params: [{ chainId: "0xaa36a7" }], // Sepolia chain ID
+        });
+      } catch (switchError: any) {
+        // This error code indicates that the chain has not been added to MetaMask.
+        if (switchError.code === 4902) {
+          try {
+            await (window as any).ethereum.request({
+              method: "wallet_addEthereumChain",
+              params: [
+                {
+                  chainId: "0xaa36a7",
+                  chainName: "Sepolia Test Network",
+                  nativeCurrency: { name: "SepoliaETH", symbol: "SEP", decimals: 18 },
+                  rpcUrls: ["https://sepolia.infura.io/v3/"],
+                  blockExplorerUrls: ["https://sepolia.etherscan.io"],
+                },
+              ],
+            });
+          } catch (addError) {
+            throw new Error("Failed to add Sepolia network to MetaMask");
+          }
+        } else {
+          throw new Error("Failed to switch to Sepolia network");
+        }
+      }
+    }
+
     const accounts = await this.provider.send("eth_requestAccounts", []);
     this.signer = await this.provider.getSigner();
+    
+    // Reinitialize contract with signer context
+    this.contract = new ethers.Contract(this.contractAddress, VotingArtifact.abi, this.signer);
+    
     return accounts[0];
   }
 

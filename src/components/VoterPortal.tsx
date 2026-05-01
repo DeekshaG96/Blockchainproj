@@ -47,7 +47,12 @@ export default function VoterPortal({ userDID }: { userDID: string | null }) {
       setTxHash(tx.hash);
       setIsVoted(true);
     } catch (err: any) {
-      setError(err.message || "Transaction failed");
+      // Check if it's the "AlreadyVoted" custom error or a generic revert
+      if (err.message && (err.message.includes("AlreadyVoted") || err.message.includes("execution reverted"))) {
+        setError("You have already voted in this election!");
+      } else {
+        setError(err.message || "Transaction failed");
+      }
     } finally {
       setIsVoting(false);
     }

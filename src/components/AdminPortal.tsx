@@ -15,6 +15,7 @@ export default function AdminPortal() {
   // Candidate creation state
   const [newName, setNewName] = useState('');
   const [newDesc, setNewDesc] = useState('');
+  const [adminError, setAdminError] = useState<string | null>(null);
 
   const refreshState = async () => {
     await blockchainService.syncState();
@@ -29,16 +30,32 @@ export default function AdminPortal() {
 
   const handleAddCandidate = async (e: React.FormEvent) => {
     e.preventDefault();
+    setAdminError(null);
     if (!newName || !newDesc) return;
-    await blockchainService.addCandidate(newName, newDesc);
-    setNewName('');
-    setNewDesc('');
-    refreshState();
+    
+    try {
+      await blockchainService.addCandidate(newName, newDesc);
+      setNewName('');
+      setNewDesc('');
+      refreshState();
+    } catch (err: any) {
+      if (err.message && err.message.includes("ElectionAlreadyStarted")) {
+        setAdminError("Cannot add candidates! The election has already started.");
+      } else {
+        setAdminError("Transaction failed. Make sure you are the contract admin.");
+      }
+    }
   };
 
   const toggleVoting = async () => {
-    await blockchainService.setVotingStatus(!votingActive);
-    refreshState();
+    if (votingActive) return; // Smart contract is immutable, cannot stop election
+    setAdminError(null);
+    try {
+      await blockchainService.setVotingStatus(true);
+      refreshState();
+    } catch (err: any) {
+      setAdminError("Transaction failed. Make sure you are the contract admin.");
+    }
   };
 
   const runAiDetection = async () => {
@@ -201,6 +218,13 @@ export default function AdminPortal() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {adminError && (
+            <div className="col-span-full p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl flex items-center gap-3 text-rose-500">
+              <AlertCircle size={20} />
+              <p className="font-bold text-sm">{adminError}</p>
+            </div>
+          )}
+          
           <div className="space-y-6">
             <div className="bg-zinc-900 border border-zinc-800 p-8 rounded-2xl">
               <h3 className="text-lg font-bold mb-6 flex items-center gap-3">
@@ -227,8 +251,13 @@ export default function AdminPortal() {
                     className="w-full bg-black border border-zinc-800 rounded-lg px-4 py-3 text-sm focus:border-emerald-500 outline-none transition-all h-24"
                   />
                 </div>
-                <button className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-black font-extrabold rounded-xl transition-all shadow-[0_0_30px_rgba(16,185,129,0.2)]">
-                  ADD TO BLOCKCHAIN
+                <button 
+                  disabled={votingActive}
+                  className={`w-full py-4 font-extrabold rounded-xl transition-all shadow-[0_0_30px_rgba(16,185,129,0.2)] ${
+                    votingActive ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed shadow-none' : 'bg-emerald-600 hover:bg-emerald-500 text-black'
+                  }`}
+                >
+                  {votingActive ? 'ELECTION STARTED (LOCKED)' : 'ADD TO BLOCKCHAIN'}
                 </button>
               </form>
             </div>
@@ -243,18 +272,19 @@ export default function AdminPortal() {
               <div className="p-6 bg-black border border-zinc-800 rounded-xl flex items-center justify-between mb-6">
                 <div>
                   <h4 className="font-bold text-sm">Contract Status</h4>
-                  <p className="text-xs text-zinc-500 uppercase font-mono">{votingActive ? 'Accepting Transactions' : 'Ledger Locked'}</p>
+                  <p className="text-xs text-zinc-500 uppercase font-mono">{votingActive ? 'Election Active' : 'Waiting for Admin'}</p>
                 </div>
                 <button 
                   onClick={toggleVoting}
+                  disabled={votingActive}
                   className={`px-6 py-2 rounded-lg font-mono text-xs font-bold transition-all flex items-center gap-2 ${
                     votingActive 
-                      ? 'bg-rose-500/10 text-rose-500 border border-rose-500/20 hover:bg-rose-500 hover:text-white' 
+                      ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 cursor-not-allowed opacity-50' 
                       : 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 hover:bg-emerald-500 hover:text-white'
                   }`}
                 >
-                  {votingActive ? <Square size={14} fill="currentColor" /> : <Play size={14} fill="currentColor" />}
-                  {votingActive ? 'STOP_ELECTION' : 'START_ELECTION'}
+                  {votingActive ? <CheckCircle2 size={14} fill="currentColor" /> : <Play size={14} fill="currentColor" />}
+                  {votingActive ? 'ACTIVE (PERMANENT)' : 'START_ELECTION'}
                 </button>
               </div>
               
