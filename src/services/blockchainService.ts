@@ -1,5 +1,5 @@
 import { ethers } from 'ethers';
-import VotingArtifact from '../../artifacts/contracts/Voting.sol/Voting.json';
+import VotingArtifact from '../contracts/Voting.json';
 
 export interface Candidate {
   id: number;
