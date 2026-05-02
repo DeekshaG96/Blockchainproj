@@ -61,11 +61,14 @@ export default function AdminPortal() {
   const runAiDetection = async () => {
     setAnalyzing(true);
     setAiInsight(null);
-    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
     
     try {
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+      if (!apiKey) throw new Error("API key missing");
+      
+      const ai = new GoogleGenAI({ apiKey });
       const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
+        model: "gemini-2.5-flash",
         config: {
           systemInstruction: "You are a cybersecurity AI monitoring a decentralized voting network. Analyze the given blockchain transaction logs and provide a brief, professional security assessment as a lead architect. Identify if there are clusters of similar transactions or sudden spikes which could indicate botting."
         },
