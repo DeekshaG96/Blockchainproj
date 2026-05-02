@@ -67,16 +67,24 @@ export default function AdminPortal() {
       if (!apiKey) throw new Error("API key missing");
       
       const ai = new GoogleGenAI({ apiKey });
+      
+      // Use actual logs, or fallback to simulated network activity if ledger is empty (for Vercel demo)
+      const analysisData = logs.length > 0 ? logs.slice(0, 10) : [
+        { hash: "0x8f2a...", type: "VOTE", from: "0x1A4...", blockNumber: 5231991, timestamp: Date.now() - 5000 },
+        { hash: "0x3b1c...", type: "VOTE", from: "0x1A4...", blockNumber: 5231991, timestamp: Date.now() - 4500 },
+        { hash: "0x9c4d...", type: "VOTE", from: "0x1A4...", blockNumber: 5231991, timestamp: Date.now() - 4000 } // Simulated Sybil attack
+      ];
+
       const response = await ai.models.generateContent({
         model: "gemini-2.5-flash",
         config: {
           systemInstruction: "You are a cybersecurity AI monitoring a decentralized voting network. Analyze the given blockchain transaction logs and provide a brief, professional security assessment as a lead architect. Identify if there are clusters of similar transactions or sudden spikes which could indicate botting."
         },
-        contents: `Analyze these network transactions: ${JSON.stringify(logs.slice(0, 10))}`
+        contents: `Analyze these network transactions: ${JSON.stringify(analysisData)}`
       });
       setAiInsight(response.text || "No anomalies detected.");
-    } catch (err) {
-      setAiInsight("AI analysis currently unavailable or ledger is empty.");
+    } catch (err: any) {
+      setAiInsight("AI analysis failed. Please ensure VITE_GEMINI_API_KEY is set correctly.");
     } finally {
       setAnalyzing(false);
     }
@@ -176,7 +184,7 @@ export default function AdminPortal() {
                 </h3>
                 <button 
                   onClick={runAiDetection}
-                  disabled={analyzing || logs.length === 0}
+                  disabled={analyzing}
                   className="text-[10px] uppercase font-bold tracking-widest text-emerald-500 hover:text-emerald-400 disabled:opacity-50"
                 >
                   RUN_SCAN
